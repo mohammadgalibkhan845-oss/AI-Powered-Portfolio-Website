@@ -251,7 +251,6 @@ export default function Hero() {
               {/* Bottom bio info bar */}
               <div className="absolute bottom-[30px] z-25 text-center font-share-tech tracking-[2px] pointer-events-none">
                 <p className="text-[9px] text-neon-cyan/80 font-orbitron font-bold">BIOMETRIC SCAN: OK</p>
-                <p className="text-[7px] text-slate-500">INTEL SYSTEM PROTOCOL 9.4A</p>
               </div>
             </div>
           </div>
