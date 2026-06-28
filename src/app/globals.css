@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@theme {
+  --font-orbitron: var(--font-orbitron);
+  --font-share-tech: var(--font-share-tech);
+  
+  --color-cyber-dark: #07070c;
+  --color-cyber-obsidian: #030305;
+  --color-neon-cyan: #00f2fe;
+  --color-neon-purple: #9d4edd;
+  --color-neon-red: #ff0055;
+  --color-neon-blue: #0056b3;
+  --color-hud-gold: #e8c96d;
+}
+
+:root {
+  --background: #030306;
+  --foreground: #e2e8f0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-share-tech), monospace;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Custom Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #030306;
+  border-left: 1px solid rgba(0, 242, 254, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 254, 0.3);
+  border-radius: 3px;
+  transition: all 0.3s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.6);
+  box-shadow: 0 0 10px rgba(157, 78, 221, 0.5);
+}
+
+/* Scanning line overlay */
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00f2fe, #9d4edd, #00f2fe, transparent);
+  animation: scan 6s linear infinite;
+  z-index: 99;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+@keyframes scan {
+  0% { top: -2vh; }
+  100% { top: 102vh; }
+}
+
+/* HUD corners */
+.corner {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  border-color: rgba(0, 242, 254, 0.3);
+  border-style: solid;
+  z-index: 50;
+  pointer-events: none;
+  transition: all 0.3s;
+}
+.corner-tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
+.corner-tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; }
+.corner-bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px; }
+.corner-br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+
+.corner-active {
+  border-color: #00f2fe;
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+}
+
+/* Glassmorphism Class */
+.hud-glass {
+  background: rgba(7, 7, 12, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 242, 254, 0.05);
+}
+
+.hud-glass:hover {
+  border-color: rgba(0, 242, 254, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(157, 78, 221, 0.1);
+}
+
+/* Grid overlay background */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.dot-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 242, 254, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Glow effects */
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(0, 242, 254, 0.8), 0 0 20px rgba(0, 242, 254, 0.4);
+}
+.glow-text-purple {
+  text-shadow: 0 0 10px rgba(157, 78, 221, 0.8), 0 0 20px rgba(157, 78, 221, 0.4);
+}
+.glow-border-cyan {
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+}
+.glow-border-purple {
+  box-shadow: 0 0 15px rgba(157, 78, 221, 0.3);
+}
+
+/* Interactive scan overlay on images */
+.face-scan-overlay {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0px, transparent 4px, rgba(0, 242, 254, 0.06) 4px, rgba(0, 242, 254, 0.06) 5px);
+  pointer-events: none;
+  z-index: 10;
+  animation: scanMove 12s linear infinite;
+}
+
+@keyframes scanMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 120px; }
+}
+
+/* Biometric glitch scan animation */
+@keyframes biometricScan {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(350px); opacity: 0; }
+}
+
+.biometric-scanner-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #00f2fe;
+  box-shadow: 0 0 12px #00f2fe;
+  z-index: 12;
+  animation: biometricScan 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Spark/Particles */
+@keyframes sparkAnim {
+  0% { opacity: 0; transform: translate(0,0) scale(1); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+}
+
+.spark {
+  position: absolute;
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: sparkAnim var(--dur) ease var(--delay) infinite;
+  z-index: 6;
+  pointer-events: none;
+}

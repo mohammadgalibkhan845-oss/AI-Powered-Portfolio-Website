@@ -1,0 +1,616 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  .hud-root {
+    background: #0a0a0f;
+    color: #e8c96d;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  .scan-line {
+    position: fixed; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg,transparent,#c0392b,#e8c96d,#c0392b,transparent);
+    animation: scan 4s linear infinite; z-index:100; opacity:0.5;
+  }
+  @keyframes scan { 0%{top:0} 100%{top:100vh} }
+
+  .corner { position:fixed; width:40px; height:40px; border-color:#c0392b; border-style:solid; z-index:50; opacity:0.6; }
+  .corner-tl{top:12px;left:12px;border-width:2px 0 0 2px}
+  .corner-tr{top:12px;right:12px;border-width:2px 2px 0 0}
+  .corner-bl{bottom:12px;left:12px;border-width:0 0 2px 2px}
+  .corner-br{bottom:12px;right:12px;border-width:0 2px 2px 0}
+
+  nav {
+    position:sticky; top:0;
+    background:rgba(10,10,15,0.92);
+    border-bottom:1px solid #c0392b44;
+    padding:14px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    z-index:40; backdrop-filter:blur(8px);
+  }
+  .nav-logo { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:900; color:#c0392b; letter-spacing:3px; }
+  .nav-links { display:flex; gap:28px; list-style:none; }
+  .nav-links a { color:#e8c96d; text-decoration:none; font-size:11px; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid transparent; transition:all 0.2s; }
+  .nav-links a:hover { color:#c0392b; border-bottom-color:#c0392b; }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:#27ae60; display:inline-block; margin-right:6px; animation:pulse-dot 2s infinite; }
+  @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  /* ── HERO ── */
+  .hero {
+    min-height:90vh;
+    display:grid;
+    grid-template-columns:1fr 420px;
+    align-items:center;
+    padding:80px 40px 60px;
+    max-width:960px;
+    margin:0 auto;
+    gap:40px;
+    position:relative;
+  }
+
+  .hero-left { z-index:2; }
+  .hero-tag { font-size:11px; letter-spacing:4px; color:#c0392b; text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .hero-tag::before { content:''; display:block; width:32px; height:1px; background:#c0392b; }
+  .hero-name { font-family:'Orbitron',sans-serif; font-size:clamp(30px,5vw,58px); font-weight:900; line-height:1.05; color:#f5f5f0; text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+  .hero-name span { color:#c0392b; display:block; }
+  .hero-title { font-size:12px; letter-spacing:3px; color:#e8c96d; text-transform:uppercase; margin-bottom:24px; }
+  .hero-desc { font-size:13px; color:#888; line-height:1.8; max-width:420px; margin-bottom:36px; }
+  .hero-btns { display:flex; gap:14px; flex-wrap:wrap; }
+  .btn-primary { background:#c0392b; color:#f5f5f0; border:none; padding:12px 26px; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; cursor:pointer; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); transition:all 0.2s; }
+  .btn-primary:hover { background:#e74c3c; transform:translateY(-2px); }
+  .btn-outline { background:transparent; color:#e8c96d; border:1px solid #e8c96d44; padding:11px 26px; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .btn-outline:hover { border-color:#c0392b; color:#c0392b; }
+
+  /* ── FACE EMERGENCE PANEL ── */
+  .face-panel {
+    position:relative;
+    width:420px;
+    height:520px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
+  /* Radial glow behind face */
+  .face-glow {
+    position:absolute;
+    inset:0;
+    background: radial-gradient(ellipse 55% 70% at 50% 52%, rgba(192,57,43,0.18) 0%, rgba(232,201,109,0.07) 40%, transparent 70%);
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+  @keyframes glowPulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
+
+  /* Scanning horizontal lines on face */
+  .face-scan-overlay {
+    position:absolute;
+    inset:0;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(192,57,43,0.04) 3px, rgba(192,57,43,0.04) 4px);
+    pointer-events:none;
+    z-index:10;
+    animation: scanMove 8s linear infinite;
+  }
+  @keyframes scanMove { 0%{background-position:0 0} 100%{background-position:0 100px} }
+
+  /* The face container — photo or avatar */
+  .face-container {
+    position:relative;
+    width:280px;
+    height:360px;
+    z-index:5;
+    animation: faceEmerge 2.2s cubic-bezier(0.16,1,0.3,1) forwards;
+    opacity:0;
+    clip-path: polygon(0 0,100% 0,100% 100%,0 100%);
+  }
+
+  @keyframes faceEmerge {
+    0%   { opacity:0; transform:translateY(60px) scale(0.88); filter:brightness(0) blur(12px); clip-path:polygon(0 100%,100% 100%,100% 100%,0 100%); }
+    30%  { opacity:0.3; filter:brightness(0.3) blur(4px) saturate(3); clip-path:polygon(0 60%,100% 60%,100% 100%,0 100%); }
+    60%  { opacity:0.7; filter:brightness(0.7) blur(1px) saturate(1.5); clip-path:polygon(0 20%,100% 20%,100% 100%,0 100%); }
+    85%  { opacity:0.9; filter:brightness(0.9) blur(0px); clip-path:polygon(0 0%,100% 0%,100% 100%,0 100%); }
+    100% { opacity:1; transform:translateY(0) scale(1); filter:brightness(1) blur(0px) saturate(1); clip-path:polygon(0 0,100% 0,100% 100%,0 100%); }
+  }
+
+  /* Photo version — unhide when you have a real photo */
+  .face-photo {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    object-position:center top;
+    display:none; /* set to block when you add src */
+    filter: grayscale(20%) contrast(1.1);
+    border:none;
+  }
+
+  /* SVG Avatar (shown until real photo added) */
+  .face-avatar {
+    width:100%;
+    height:100%;
+  }
+
+  /* HUD target rings around face */
+  .target-ring {
+    position:absolute;
+    border-radius:50%;
+    border:1px solid #c0392b;
+    animation:ringPulse 2s ease-in-out infinite;
+    pointer-events:none;
+    z-index:8;
+  }
+  .ring1 { width:300px;height:300px; top:28px; left:50%; transform:translateX(-50%); opacity:0.15; animation-delay:0s; }
+  .ring2 { width:250px;height:250px; top:53px; left:50%; transform:translateX(-50%); opacity:0.2; animation-delay:0.4s; }
+  .ring3 { width:200px;height:200px; top:78px; left:50%; transform:translateX(-50%); opacity:0.25; animation-delay:0.8s; border-style:dashed; }
+  @keyframes ringPulse { 0%,100%{opacity:0.12;transform:translateX(-50%) scale(1)} 50%{opacity:0.35;transform:translateX(-50%) scale(1.03)} }
+
+  /* Corner brackets around face */
+  .face-bracket {
+    position:absolute;
+    width:24px; height:24px;
+    border-color:#e8c96d;
+    border-style:solid;
+    opacity:0;
+    z-index:12;
+    animation:bracketIn 0.4s ease forwards;
+  }
+  .fb-tl{top:30px;left:40px;border-width:2px 0 0 2px;animation-delay:1.8s}
+  .fb-tr{top:30px;right:40px;border-width:2px 2px 0 0;animation-delay:2.0s}
+  .fb-bl{bottom:30px;left:40px;border-width:0 0 2px 2px;animation-delay:2.2s}
+  .fb-br{bottom:30px;right:40px;border-width:0 2px 2px 0;animation-delay:2.4s}
+  @keyframes bracketIn{to{opacity:0.6}}
+
+  /* HUD data tags floating beside face */
+  .hud-tag {
+    position:absolute;
+    font-size:9px;
+    letter-spacing:2px;
+    color:#e8c96d;
+    opacity:0;
+    animation:tagIn 0.5s ease forwards;
+    white-space:nowrap;
+    z-index:12;
+  }
+  .hud-tag::before { content:''; display:inline-block; width:20px; height:1px; background:#c0392b; margin-right:6px; vertical-align:middle; }
+
+  .ht1{top:80px;left:-20px;animation-delay:2.2s}
+  .ht2{top:140px;left:-20px;animation-delay:2.4s}
+  .ht3{top:200px;left:-20px;animation-delay:2.6s}
+  .ht4{top:80px;right:-20px;text-align:right;animation-delay:2.3s}
+  .ht4::before{display:none}
+  .ht4::after{content:''; display:inline-block; width:20px; height:1px; background:#c0392b; margin-left:6px; vertical-align:middle;}
+  .ht5{top:140px;right:-20px;text-align:right;animation-delay:2.5s}
+  .ht5::before{display:none}
+  .ht5::after{content:''; display:inline-block; width:20px; height:1px; background:#c0392b; margin-left:6px; vertical-align:middle;}
+
+  @keyframes tagIn{to{opacity:0.7}}
+
+  /* Bottom bar under face */
+  .face-bottom-bar {
+    position:absolute;
+    bottom:20px; left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    z-index:12;
+    opacity:0;
+    animation:tagIn 0.5s ease 2.6s forwards;
+  }
+  .face-id {
+    font-family:'Orbitron',sans-serif;
+    font-size:10px;
+    color:#c0392b;
+    letter-spacing:3px;
+  }
+  .face-status {
+    font-size:9px;
+    color:#555;
+    letter-spacing:2px;
+    margin-top:2px;
+  }
+
+  /* Particle sparks */
+  .spark {
+    position:absolute;
+    width:2px; height:2px;
+    border-radius:50%;
+    background:#e8c96d;
+    opacity:0;
+    animation:sparkAnim var(--dur) ease var(--delay) infinite;
+    z-index:6;
+  }
+  @keyframes sparkAnim {
+    0%{opacity:0;transform:translate(0,0) scale(1)}
+    20%{opacity:1}
+    100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}
+  }
+
+  /* ── OTHER SECTIONS ── */
+  section { padding:60px 40px; max-width:960px; margin:0 auto; }
+  .hud-divider { display:flex; align-items:center; gap:12px; margin-bottom:36px; }
+  .hud-divider-line { flex:1; height:1px; background:linear-gradient(90deg,#c0392b,transparent); }
+  .hud-section-label { font-family:'Orbitron',sans-serif; font-size:11px; letter-spacing:4px; color:#c0392b; text-transform:uppercase; }
+  .hud-section-title { font-family:'Orbitron',sans-serif; font-size:24px; font-weight:700; color:#f5f5f0; text-transform:uppercase; margin-bottom:28px; letter-spacing:2px; }
+
+  .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .about-text { font-size:13px; color:#aaa; line-height:1.9; }
+  .about-text p{margin-bottom:12px;}
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-content:start; }
+  .stat-card { border:1px solid #c0392b33; padding:18px 16px; position:relative; background:rgba(192,57,43,0.04); }
+  .stat-card::before { content:''; position:absolute; top:0;left:0; width:3px; height:100%; background:#c0392b; }
+  .stat-num { font-family:'Orbitron',sans-serif; font-size:26px; font-weight:900; color:#c0392b; line-height:1; margin-bottom:4px; }
+  .stat-label { font-size:9px; letter-spacing:2px; color:#666; text-transform:uppercase; }
+
+  .skills-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .skill-group { border:1px solid #e8c96d22; padding:18px; background:rgba(232,201,109,0.02); }
+  .skill-group-title { font-size:10px; letter-spacing:3px; color:#e8c96d; text-transform:uppercase; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid #e8c96d22; }
+  .skill-item{margin-bottom:10px}
+  .skill-name-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .skill-name{font-size:11px;color:#bbb;letter-spacing:1px}
+  .skill-pct{font-size:10px;color:#c0392b}
+  .skill-bar-bg{height:3px;background:#1a1a2e;position:relative}
+  .skill-bar-fill{height:100%;background:linear-gradient(90deg,#c0392b,#e8c96d);width:0;transition:width 1.4s cubic-bezier(0.4,0,0.2,1);position:relative}
+  .skill-bar-fill::after{content:'';position:absolute;right:0;top:-2px;width:6px;height:6px;border-radius:50%;background:#e8c96d}
+
+  .projects-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .project-card{border:1px solid #c0392b33;padding:22px;position:relative;background:rgba(10,10,15,0.8);transition:all 0.25s;cursor:pointer}
+  .project-card:hover{border-color:#c0392b;background:rgba(192,57,43,0.06);transform:translateY(-3px)}
+  .project-num{font-family:'Orbitron',sans-serif;font-size:10px;color:#c0392b44;letter-spacing:2px;margin-bottom:10px}
+  .project-title{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:#f5f5f0;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .project-desc{font-size:11px;color:#777;line-height:1.7;margin-bottom:14px}
+  .project-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:9px;letter-spacing:2px;color:#e8c96d;border:1px solid #e8c96d44;padding:3px 8px;text-transform:uppercase}
+  .project-card::after{content:'';position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 18px 18px 0;border-color:transparent #c0392b transparent transparent;transition:border-color 0.25s}
+  .project-card:hover::after{border-color:transparent #e74c3c transparent transparent}
+
+  .contact-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+  .contact-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #ffffff0a;margin-bottom:12px}
+  .contact-icon{width:34px;height:34px;border:1px solid #c0392b55;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#c0392b;font-size:16px}
+  .contact-label{font-size:9px;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:2px}
+  .contact-value{font-size:12px;color:#ccc}
+  .contact-form{display:flex;flex-direction:column;gap:12px}
+  .hud-input{background:rgba(255,255,255,0.03);border:1px solid #ffffff15;border-bottom-color:#c0392b55;color:#e8c96d;padding:11px 13px;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none;transition:all 0.2s;width:100%}
+  .hud-input:focus{border-color:#c0392b;background:rgba(192,57,43,0.04)}
+  .hud-input::placeholder{color:#444}
+  textarea.hud-input{resize:none;min-height:88px}
+
+  .hud-footer{border-top:1px solid #c0392b22;padding:18px 40px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#444;letter-spacing:2px;text-transform:uppercase}
+  .footer-status{display:flex;align-items:center;gap:6px;color:#27ae60;font-size:10px;letter-spacing:2px}
+
+  .section-alt{background:rgba(192,57,43,0.02)}
+
+  /* how-to-add-photo hint */
+  .photo-hint{font-size:10px;color:#c0392b55;letter-spacing:1px;text-align:center;margin-top:8px;font-style:italic}
+</style>
+
+<div class="hud-root">
+  <div class="scan-line"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <nav>
+    <div class="nav-logo">&#9632; Stark.dev</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <div style="font-size:10px;letter-spacing:2px;color:#555"><span class="status-dot"></span>Online</div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero" id="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Initializing Profile</div>
+      <div class="hero-name">Your<span>Name Here</span></div>
+      <div class="hero-title">// Full Stack Java Developer &amp; UI Engineer</div>
+      <p class="hero-desc">Building enterprise-grade applications with Java Spring Boot &amp; React. Passionate about clean architecture, performance, and futuristic user experiences.</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">View Projects</button>
+        <button class="btn-outline" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Contact Me</button>
+      </div>
+    </div>
+
+    <!-- FACE PANEL -->
+    <div class="face-panel" id="facePanel">
+      <div class="face-glow"></div>
+      <div class="face-scan-overlay"></div>
+
+      <!-- Target rings -->
+      <div class="target-ring ring1"></div>
+      <div class="target-ring ring2"></div>
+      <div class="target-ring ring3"></div>
+
+      <!-- Face container -->
+      <div class="face-container" id="faceContainer">
+        <!-- Real photo: uncomment below and set src to your image URL -->
+        <!-- <img class="face-photo" id="facePhoto" src="YOUR_PHOTO_URL_HERE" alt="Profile photo" style="display:block"> -->
+
+        <!-- Placeholder avatar SVG (shown when no photo) -->
+        <svg class="face-avatar" id="avatarSvg" viewBox="0 0 280 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bodyGrad" cx="50%" cy="40%" r="55%">
+              <stop offset="0%" stop-color="#2a1a1a"/>
+              <stop offset="100%" stop-color="#0a0a0f"/>
+            </radialGradient>
+            <radialGradient id="faceGrad" cx="50%" cy="38%" r="50%">
+              <stop offset="0%" stop-color="#3a2020"/>
+              <stop offset="80%" stop-color="#1a0f0f"/>
+              <stop offset="100%" stop-color="#0a0a0f"/>
+            </radialGradient>
+            <linearGradient id="shirtGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1a0808"/>
+              <stop offset="100%" stop-color="#0a0a0f"/>
+            </linearGradient>
+            <filter id="redGlow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+
+          <!-- Background fog -->
+          <ellipse cx="140" cy="200" rx="130" ry="160" fill="url(#bodyGrad)" opacity="0.9"/>
+
+          <!-- Shoulders / body -->
+          <path d="M20 360 Q20 280 60 260 Q100 240 140 238 Q180 240 220 260 Q260 280 260 360Z" fill="url(#shirtGrad)"/>
+
+          <!-- Neck -->
+          <rect x="114" y="225" width="52" height="40" rx="10" fill="#2a1515"/>
+
+          <!-- Head shape -->
+          <ellipse cx="140" cy="165" rx="78" ry="95" fill="url(#faceGrad)"/>
+
+          <!-- Ear left -->
+          <ellipse cx="64" cy="168" rx="10" ry="14" fill="#2a1515"/>
+          <!-- Ear right -->
+          <ellipse cx="216" cy="168" rx="10" ry="14" fill="#2a1515"/>
+
+          <!-- Hair -->
+          <ellipse cx="140" cy="90" rx="75" ry="45" fill="#111"/>
+          <path d="M65 120 Q62 90 80 75 Q100 60 140 58 Q180 58 200 75 Q218 90 215 120" fill="#111"/>
+          <path d="M65 120 Q64 105 70 95" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+          <path d="M215 120 Q216 105 210 95" stroke="#1a1a1a" stroke-width="2" fill="none"/>
+
+          <!-- Hair texture lines -->
+          <path d="M90 70 Q120 62 150 65" stroke="#1a1a1a" stroke-width="1.5" fill="none" opacity="0.6"/>
+          <path d="M100 78 Q130 68 165 72" stroke="#1a1a1a" stroke-width="1" fill="none" opacity="0.4"/>
+
+          <!-- Eyebrows -->
+          <path d="M100 138 Q118 132 130 136" stroke="#4a2a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M150 136 Q162 132 178 138" stroke="#4a2a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+          <!-- Eyes -->
+          <ellipse cx="118" cy="155" rx="14" ry="10" fill="#0a0a0f"/>
+          <ellipse cx="162" cy="155" rx="14" ry="10" fill="#0a0a0f"/>
+          <!-- Iris -->
+          <circle cx="118" cy="155" r="7" fill="#1a0808"/>
+          <circle cx="162" cy="155" r="7" fill="#1a0808"/>
+          <!-- Pupil -->
+          <circle cx="118" cy="155" r="4" fill="#050505"/>
+          <circle cx="162" cy="155" r="4" fill="#050505"/>
+          <!-- Eye shine -->
+          <circle cx="121" cy="152" r="2" fill="#c0392b" opacity="0.7">
+            <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="165" cy="152" r="2" fill="#c0392b" opacity="0.7">
+            <animate attributeName="opacity" values="0.7;0.3;0.7" dur="3s" begin="0.2s" repeatCount="indefinite"/>
+          </circle>
+          <!-- Eye outline -->
+          <ellipse cx="118" cy="155" rx="14" ry="10" stroke="#3a2020" stroke-width="1.5" fill="none"/>
+          <ellipse cx="162" cy="155" rx="14" ry="10" stroke="#3a2020" stroke-width="1.5" fill="none"/>
+
+          <!-- Nose -->
+          <path d="M136 165 Q132 185 126 192 Q134 197 140 196 Q146 197 154 192 Q148 185 144 165" fill="#1e0e0e" opacity="0.7"/>
+          <path d="M130 193 Q140 198 150 193" stroke="#3a2020" stroke-width="1.5" fill="none"/>
+
+          <!-- Mouth -->
+          <path d="M116 212 Q128 222 140 222 Q152 222 164 212" stroke="#4a2a2a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M122 212 Q131 208 140 208 Q149 208 158 212" stroke="#2a1515" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+          <!-- Cheekbone highlight -->
+          <ellipse cx="100" cy="178" rx="18" ry="10" fill="#c0392b" opacity="0.05"/>
+          <ellipse cx="180" cy="178" rx="18" ry="10" fill="#c0392b" opacity="0.05"/>
+
+          <!-- Chin shadow -->
+          <ellipse cx="140" cy="235" rx="30" ry="8" fill="#050505" opacity="0.8"/>
+
+          <!-- HUD scan line moving over face -->
+          <line x1="40" y1="0" x2="240" y2="0" stroke="#c0392b" stroke-width="1" opacity="0.4">
+            <animateTransform attributeName="transform" type="translate" from="0,80" to="0,360" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.5;0.5;0" keyTimes="0;0.1;0.9;1" dur="3s" repeatCount="indefinite"/>
+          </line>
+
+          <!-- Red targeting crosshair overlay -->
+          <circle cx="140" cy="155" r="88" stroke="#c0392b" stroke-width="0.5" fill="none" opacity="0.15" stroke-dasharray="4 8"/>
+
+          <!-- corner markers on face -->
+          <g opacity="0.5">
+            <path d="M68 82 L68 92 M68 82 L78 82" stroke="#e8c96d" stroke-width="1.5"/>
+            <path d="M212 82 L212 92 M212 82 L202 82" stroke="#e8c96d" stroke-width="1.5"/>
+            <path d="M68 250 L68 240 M68 250 L78 250" stroke="#e8c96d" stroke-width="1.5"/>
+            <path d="M212 250 L212 240 M212 250 L202 250" stroke="#e8c96d" stroke-width="1.5"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Face bracket corners -->
+      <div class="face-bracket fb-tl"></div>
+      <div class="face-bracket fb-tr"></div>
+      <div class="face-bracket fb-bl"></div>
+      <div class="face-bracket fb-br"></div>
+
+      <!-- HUD data tags -->
+      <div class="hud-tag ht1">IDENTITY CONFIRMED</div>
+      <div class="hud-tag ht2">STATUS // ACTIVE</div>
+      <div class="hud-tag ht3">THREAT // ZERO</div>
+      <div class="hud-tag ht4">DEV // ONLINE</div>
+      <div class="hud-tag ht5">STACK // JAVA</div>
+
+      <!-- Face bottom ID bar -->
+      <div class="face-bottom-bar">
+        <div class="face-id">DEVELOPER // ID-2026</div>
+        <div class="face-status">// biometric scan complete</div>
+      </div>
+
+      <!-- Particle sparks -->
+      <div id="sparks"></div>
+    </div>
+
+    <div class="photo-hint">// Replace avatar with your photo — see instructions below</div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="hud-divider">
+      <div class="hud-section-label">// 01 — About</div>
+      <div class="hud-divider-line"></div>
+    </div>
+    <div class="hud-section-title">System Profile</div>
+    <div class="about-grid">
+      <div class="about-text">
+        <p>I'm a Full Stack Java Developer with a passion for building high-performance, scalable web applications. Like engineering an Iron Man suit — every line of code is intentional, precise, and built to last.</p>
+        <p>Currently pursuing Java Full Stack development, combining React.js on the frontend with Spring Boot on the backend, deploying on cloud infrastructure.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num">6+</div><div class="stat-label">Months Learning</div></div>
+        <div class="stat-card"><div class="stat-num">10+</div><div class="stat-label">Projects Built</div></div>
+        <div class="stat-card"><div class="stat-num">5+</div><div class="stat-label">Tech Stacks</div></div>
+        <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label">Commitment</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills" class="section-alt">
+    <div class="hud-divider">
+      <div class="hud-section-label">// 02 — Skills</div>
+      <div class="hud-divider-line"></div>
+    </div>
+    <div class="hud-section-title">Tech Arsenal</div>
+    <div class="skills-grid">
+      <div class="skill-group">
+        <div class="skill-group-title">Frontend</div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">HTML / CSS</span><span class="skill-pct">90%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="90%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">JavaScript</span><span class="skill-pct">75%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="75%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">React.js</span><span class="skill-pct">70%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="70%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Tailwind CSS</span><span class="skill-pct">80%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="80%"></div></div></div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Backend</div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Core Java</span><span class="skill-pct">72%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="72%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Spring Boot</span><span class="skill-pct">60%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="60%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">REST APIs</span><span class="skill-pct">65%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="65%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Spring Security</span><span class="skill-pct">50%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="50%"></div></div></div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-title">Database &amp; Tools</div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">MySQL</span><span class="skill-pct">70%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="70%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">MongoDB</span><span class="skill-pct">55%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="55%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Git / GitHub</span><span class="skill-pct">80%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="80%"></div></div></div>
+        <div class="skill-item"><div class="skill-name-row"><span class="skill-name">Docker</span><span class="skill-pct">40%</span></div><div class="skill-bar-bg"><div class="skill-bar-fill" data-w="40%"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="hud-divider">
+      <div class="hud-section-label">// 03 — Projects</div>
+      <div class="hud-divider-line"></div>
+    </div>
+    <div class="hud-section-title">Deployed Missions</div>
+    <div class="projects-grid">
+      <div class="project-card"><div class="project-num">MISSION // 001</div><div class="project-title">E-Commerce Platform</div><p class="project-desc">Full stack shopping app with Spring Boot backend, React frontend, JWT auth, and MySQL database.</p><div class="project-tags"><span class="tag">React</span><span class="tag">Spring Boot</span><span class="tag">MySQL</span></div></div>
+      <div class="project-card"><div class="project-num">MISSION // 002</div><div class="project-title">Job Portal App</div><p class="project-desc">Full stack job board with employer &amp; candidate roles, Spring Security, REST APIs, and responsive React UI.</p><div class="project-tags"><span class="tag">Java</span><span class="tag">React</span><span class="tag">Spring Security</span></div></div>
+      <div class="project-card"><div class="project-num">MISSION // 003</div><div class="project-title">Weather Dashboard</div><p class="project-desc">Real-time weather app consuming OpenWeather API, built with React hooks and animated UI components.</p><div class="project-tags"><span class="tag">React</span><span class="tag">API</span><span class="tag">Animations</span></div></div>
+      <div class="project-card"><div class="project-num">MISSION // 004</div><div class="project-title">Student Mgmt System</div><p class="project-desc">CRUD app with Spring Boot REST API, JPA/Hibernate, MySQL backend, and React frontend with live search.</p><div class="project-tags"><span class="tag">Spring Boot</span><span class="tag">JPA</span><span class="tag">React</span></div></div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="section-alt">
+    <div class="hud-divider">
+      <div class="hud-section-label">// 04 — Contact</div>
+      <div class="hud-divider-line"></div>
+    </div>
+    <div class="hud-section-title">Open Channel</div>
+    <div class="contact-wrapper">
+      <div>
+        <div class="contact-item"><div class="contact-icon"><i class="ti ti-mail" aria-hidden="true"></i></div><div><div class="contact-label">Email</div><div class="contact-value">your.email@gmail.com</div></div></div>
+        <div class="contact-item"><div class="contact-icon"><i class="ti ti-brand-github" aria-hidden="true"></i></div><div><div class="contact-label">GitHub</div><div class="contact-value">github.com/yourusername</div></div></div>
+        <div class="contact-item"><div class="contact-icon"><i class="ti ti-brand-linkedin" aria-hidden="true"></i></div><div><div class="contact-label">LinkedIn</div><div class="contact-value">linkedin.com/in/yourname</div></div></div>
+        <div class="contact-item"><div class="contact-icon"><i class="ti ti-map-pin" aria-hidden="true"></i></div><div><div class="contact-label">Location</div><div class="contact-value">Bhopal, Madhya Pradesh, India</div></div></div>
+      </div>
+      <div class="contact-form">
+        <input class="hud-input" type="text" placeholder="// YOUR_NAME"/>
+        <input class="hud-input" type="email" placeholder="// YOUR_EMAIL"/>
+        <textarea class="hud-input" placeholder="// MESSAGE_BODY"></textarea>
+        <button class="btn-primary" style="align-self:flex-start;clip-path:none">Transmit Message</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="hud-footer">
+    <div class="footer-status"><span class="status-dot"></span>All Systems Operational</div>
+    <div>// Portfolio v2.0</div>
+    <div>2026 &copy; Your Name</div>
+  </div>
+</div>
+
+<script>
+  /* Skill bars */
+  const bars = document.querySelectorAll('.skill-bar-fill');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const w = e.target.getAttribute('data-w');
+        setTimeout(() => { e.target.style.width = w; }, 100);
+        obs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  bars.forEach(b => obs.observe(b));
+
+  /* Nav smooth scroll */
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById(a.getAttribute('href').slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  /* Particle sparks around face */
+  const sparksEl = document.getElementById('sparks');
+  const panel = document.getElementById('facePanel');
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const angle = Math.random() * 360;
+    const dist = 80 + Math.random() * 120;
+    const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
+    const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
+    const cx = 180 + Math.cos(angle * Math.PI / 180) * 80;
+    const cy = 220 + Math.sin(angle * Math.PI / 180) * 80;
+    s.style.cssText = `left:${cx}px;top:${cy}px;--tx:${tx};--ty:${ty};--dur:${1.5+Math.random()*2}s;--delay:${1.5+Math.random()*3}s;`;
+    s.style.background = Math.random() > 0.5 ? '#e8c96d' : '#c0392b';
+    sparksEl.appendChild(s);
+  }
+
+  /* Glitch on hero name */
+  const heroName = document.querySelector('.hero-name');
+  setInterval(() => {
+    if (Math.random() > 0.97) {
+      heroName.style.opacity = '0.6';
+      heroName.style.transform = 'skewX(-2deg)';
+      setTimeout(() => {
+        heroName.style.opacity = '1';
+        heroName.style.transform = 'skewX(0deg)';
+      }, 80);
+    }
+  }, 300);
+</script>
