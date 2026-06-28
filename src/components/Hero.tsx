@@ -118,7 +118,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 border-b border-cyan-500/20 pb-4 mb-4">
                 <Cpu className="w-5 h-5 text-neon-cyan animate-spin" />
                 <span className="font-orbitron font-bold text-xs uppercase tracking-widest text-white">
-                  Stark System Diagnoses
+                  Galib System Diagnoses
                 </span>
                 <span className="ml-auto text-[10px] text-neon-cyan opacity-80 animate-pulse">V4.9.2</span>
               </div>
@@ -231,19 +231,19 @@ export default function Hero() {
 
               {/* Dynamic HUD labels floating next to face */}
               <div className="absolute text-[8px] tracking-[2px] uppercase font-share-tech z-25 text-neon-cyan pointer-events-none">
-                <div className="absolute top-[80px] -left-[60px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5 animate-pulse">
+                <div className="absolute top-[50px] -left-[60px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5 animate-pulse">
                   // IDENTITY: GALIB
                 </div>
-                <div className="absolute top-[140px] -left-[80px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5">
+                <div className="absolute top-[100px] -left-[80px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5">
                   // STATUS: ACTIVE
                 </div>
-                <div className="absolute top-[200px] -left-[60px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5">
+                <div className="absolute top-[150px] -left-[60px] whitespace-nowrap bg-black/60 border-l border-cyan-400/80 px-2 py-0.5">
                   // LOC: BHOPAL_IN
                 </div>
-                <div className="absolute top-[80px] right-[40px] sm:right-[20px] whitespace-nowrap bg-black/60 border-r border-purple-400/80 px-2 py-0.5 text-right">
+                <div className="absolute top-[50px] right-[40px] sm:right-[20px] whitespace-nowrap bg-black/60 border-r border-purple-400/80 px-2 py-0.5 text-right">
                   CORE: ONLINE //
                 </div>
-                <div className="absolute top-[140px] right-[60px] sm:right-[40px] whitespace-nowrap bg-black/60 border-r border-purple-400/80 px-2 py-0.5 text-right">
+                <div className="absolute top-[100px] right-[60px] sm:right-[40px] whitespace-nowrap bg-black/60 border-r border-purple-400/80 px-2 py-0.5 text-right">
                   STACK: FULL-STACK //
                 </div>
               </div>
